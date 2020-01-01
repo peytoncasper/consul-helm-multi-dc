@@ -95,12 +95,13 @@ spec:
             - "-ec"
             - |
               CONSUL_FULLNAME="{{template "consul.fullname" . }}"
-
+              PUBLIC_IP=$(curl https://ipinfo.io/ip)
               exec /bin/consul agent \
                 -advertise="${POD_IP}" \
                 -bind=0.0.0.0 \
                 -bootstrap-expect={{ .Values.server.bootstrapExpect }} \
                 -client=0.0.0.0 \
+                -advertise-wan=$PUBLIC_IP \
                 -config-dir=/consul/config \
                 {{- range .Values.server.extraVolumes }}
                 {{- if .load }}
@@ -146,9 +147,15 @@ spec:
             - containerPort: 8301
               name: serflan
             - containerPort: 8302
-              name: serfwan
+              name: serfwan-tcp
+              hostPort: 8302
+            - containerPort: 8302
+              name: serfwan-udp
+              protocol: "UDP"
+              hostPort: 8302
             - containerPort: 8300
               name: server
+              hostPort: 8300
             - containerPort: 8600
               name: dns-tcp
               protocol: "TCP"
